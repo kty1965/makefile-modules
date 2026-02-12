@@ -150,3 +150,17 @@ tf/help: ## Show Terraform module help
 	@echo "Config dir: $(TF_ENV_DIR)"
 
 endif
+
+# ============================================
+# Terraform 보안 및 비용 관리
+# ============================================
+.PHONY: tf/show
+tf/show: ## Show current state or plan
+	$(call tf_log_info,Showing Terraform state...)
+	$(TF) -chdir=$(TF_ROOT_MODULE_DIR) show
+
+.PHONY: tf/graph
+tf/graph: ## Generate visual graph
+	$(call tf_log_info,Generating resource graph...)
+	$(TF) -chdir=$(TF_ROOT_MODULE_DIR) graph
+
