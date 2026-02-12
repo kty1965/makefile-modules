@@ -1,0 +1,34 @@
+{
+  "packages": {
+    "modules/terraform": {
+      "release-type": "simple",
+      "package-name": "terraform",
+      "changelog-path": "CHANGELOG.md",
+      "include-component-in-tag": true,
+      "include-v-in-tag": true,
+      "tag-separator": "-v",
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "modules/terraform/terraform.mk",
+          "glob": false
+        }
+      ]
+    },
+    "modules/shared": {
+      "release-type": "simple",
+      "package-name": "shared",
+      "changelog-path": "CHANGELOG.md",
+      "include-component-in-tag": true,
+      "include-v-in-tag": true,
+      "tag-separator": "-v",
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "modules/shared/shared.mk",
+          "glob": false
+        }
+      ]
+    }
+  }
+}

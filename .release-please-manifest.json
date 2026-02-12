@@ -1,0 +1,4 @@
+{
+  "modules/terraform": "1.0.0",
+  "modules/shared": "1.0.0"
+}

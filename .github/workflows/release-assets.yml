@@ -1,0 +1,104 @@
+name: Release Assets
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  upload-assets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract module from tag
+        id: extract
+        run: |
+          TAG_NAME="${{ github.event.release.tag_name }}"
+          echo "Full tag: $TAG_NAME"
+
+          # Tag format: modules-terraform-v1.0.0 or modules-shared-v1.0.0
+          if [[ $TAG_NAME =~ ^modules-([^-]+)-v(.+)$ ]]; then
+            MODULE_NAME="${BASH_REMATCH[1]}"
+            VERSION="${BASH_REMATCH[2]}"
+            echo "module_name=$MODULE_NAME" >> $GITHUB_OUTPUT
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "Extracted: module=$MODULE_NAME, version=$VERSION"
+          else
+            echo "Tag format not recognized: $TAG_NAME"
+            exit 1
+          fi
+
+      - name: Generate checksums for module
+        id: checksums
+        run: |
+          MODULE="${{ steps.extract.outputs.module_name }}"
+          cd modules/$MODULE
+
+          echo "Generating checksum for $MODULE.mk..."
+          sha256sum *.mk > checksums.txt
+
+          echo "Generated checksums:"
+          cat checksums.txt
+
+      - name: Create installation guide
+        run: |
+          MODULE="${{ steps.extract.outputs.module_name }}"
+          VERSION="${{ steps.extract.outputs.version }}"
+          TAG="${{ github.event.release.tag_name }}"
+
+          cat > install_guide.md << EOF
+          ## 📦 Installation
+
+          ### Auto-download Pattern
+
+          \`\`\`makefile
+          ${MODULE^^}_MODULE_VERSION := v$VERSION
+          ${MODULE^^}_TAG := $TAG
+          ${MODULE^^}_URL := https://github.com/kty1965/makefile-modules/releases/download/\$(${MODULE^^}_TAG)
+
+          make/${MODULE}.mk:
+          	@mkdir -p make
+          	@curl -fsSL \$(${MODULE^^}_URL)/${MODULE}.mk -o \$@
+          	@curl -fsSL \$(${MODULE^^}_URL)/checksums.txt -o make/${MODULE}-checksums.txt
+          	@cd make && grep "${MODULE}.mk" ${MODULE}-checksums.txt | sha256sum -c -
+
+          include make/${MODULE}.mk
+          \`\`\`
+
+          ### Vendoring Pattern
+
+          \`\`\`bash
+          mkdir -p vendor/make
+          curl -fsSL https://github.com/kty1965/makefile-modules/releases/download/$TAG/${MODULE}.mk \\
+            -o vendor/make/${MODULE}.mk
+          curl -fsSL https://github.com/kty1965/makefile-modules/releases/download/$TAG/checksums.txt \\
+            -o vendor/make/${MODULE}-checksums.txt
+          cd vendor/make && grep "${MODULE}.mk" ${MODULE}-checksums.txt | sha256sum -c -
+
+          git add vendor/make
+          git commit -m "chore: vendor ${MODULE} module v$VERSION"
+          \`\`\`
+
+          ## 🔐 Checksums
+
+          \`\`\`
+          EOF
+
+          cd modules/$MODULE
+          cat checksums.txt >> ../../install_guide.md
+          echo '```' >> ../../install_guide.md
+
+      - name: Upload module assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            modules/${{ steps.extract.outputs.module_name }}/*.mk
+            modules/${{ steps.extract.outputs.module_name }}/checksums.txt
+          body_path: install_guide.md
+          append_body: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
