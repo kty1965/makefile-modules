@@ -5,7 +5,7 @@
       "package-name": "terraform",
       "changelog-path": "CHANGELOG.md",
       "include-component-in-tag": true,
-      "include-v-in-tag": true,
+      "include-v-in-tag": false,
       "tag-separator": "-v",
       "extra-files": [
         {
@@ -20,7 +20,7 @@
       "package-name": "shared",
       "changelog-path": "CHANGELOG.md",
       "include-component-in-tag": true,
-      "include-v-in-tag": true,
+      "include-v-in-tag": false,
       "tag-separator": "-v",
       "extra-files": [
         {
